@@ -59,25 +59,21 @@ print_board :-
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
     print_row(1),
     writeln('   └───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┘'),
-    writeln('       a       b       c       d       e       f       g       h'),
+    writeln('       a       b       c       d       e       f       g       h    '),
     nl.
 
 print_row(Y) :-
-    squares([1,2,3,4,5,6,7,8],Y,List),
+    findall(S,(coord(X),symbol(X,Y,S)),L),
     writeln('   │       │       │       │       │       │       │       │       │'),
-    format(' ~w │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │~n', [Y|List]),
+    format(' ~w │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │~n', [Y|L]),
     writeln('   │       │       │       │       │       │       │       │       │').
-
-squares([],_,[]).
-squares([X|T],Y,[S|L]) :-
-    symbol(X,Y,S),
-    squares(T,Y,L).
 
 symbol(X,Y,○) :- p(X,Y,white,m).
 symbol(X,Y,●) :- p(X,Y,black,m).
 symbol(X,Y,♔) :- p(X,Y,white,k).
 symbol(X,Y,♚) :- p(X,Y,black,k).
-symbol(_,_,' ').
+symbol(X,Y,࠰) :- legal_move(white,_,_,X,Y,_), !.
+symbol(X,Y,' ') :- empty(X,Y).
 
 
 
@@ -129,7 +125,7 @@ legal_move(C,X1,Y1,X2,Y2,[]) :-
     p(X1,Y1,C,T),
     empty(X2,Y2),
     next_row(C,T,Y1,Y2),
-    (X2 is X1 - 1; X2 is X1 + 1).
+    next_col(X1,X2).
 
 legal_move(C,X1,Y1,X2,Y2,L) :-
     p(X1,Y1,C,T),
@@ -139,7 +135,7 @@ legal_move(C,X1,Y1,X2,Y2,L) :-
 capture(_,_,X,Y,X,Y,[]).
 capture(C,T,X1,Y1,X2,Y2,[[X,Y]|L]) :-
     next_row(C,T,Y1,Y),
-    (X is X1 - 1; X is X1 + 1),
+    next_col(X1,X),
     p(X,Y,OC,OT),
     opponent(C,OC),
     (OT = m; T = k),
@@ -159,6 +155,8 @@ next_row(black,m,Y1,Y2) :-
 next_row(_,k,Y1,Y2) :-
     coord(Y1),
     (Y2 is Y1 - 1; Y2 is Y1 + 1).
+
+next_col(X1,X2) :- (X2 is X1 - 1; X2 is X1 + 1).
 
 perform(X1,Y1,X2,Y2) :-
     (Y2 is 1; Y2 is 8),
