@@ -121,16 +121,17 @@ make_move(C) :-
     writeln('Illegal move. Retry.'),
     make_move(C).
 
-legal_move(C,X1,Y1,X2,Y2,[]) :-
-    p(X1,Y1,C,T),
-    empty(X2,Y2),
-    next_row(C,T,Y1,Y2),
-    next_col(X1,X2).
-
 legal_move(C,X1,Y1,X2,Y2,L) :-
     p(X1,Y1,C,T),
     empty(X2,Y2),
     capture(C,T,X1,Y1,X2,Y2,L).
+
+legal_move(C,X1,Y1,X2,Y2,[]) :-
+    p(X1,Y1,C,T),
+    empty(X2,Y2),
+    next_row(C,T,Y1,Y2),
+    next_col(X1,X2),
+    \+ legal_move(C,_,_,_,_,[_|_]).
 
 capture(_,_,X,Y,X,Y,[]).
 capture(C,T,X1,Y1,X2,Y2,[[X,Y]|L]) :-
