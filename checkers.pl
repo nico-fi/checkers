@@ -29,7 +29,7 @@ initialize_board :-
     assert(p(5,8,black,m)),
     assert(p(7,8,black,m)).
 
-coord(X) :- member(X,[1,2,3,4,5,6,7,8]).
+coord(C) :- member(C,[1,2,3,4,5,6,7,8]).
 
 empty(X,Y) :-
     coord(X),
@@ -68,12 +68,27 @@ print_row(Y) :-
     format(' ~w │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │~n', [Y|L]),
     writeln('   │       │       │       │       │       │       │       │       │').
 
-symbol(X,Y,○) :- p(X,Y,white,m).
-symbol(X,Y,●) :- p(X,Y,black,m).
-symbol(X,Y,♔) :- p(X,Y,white,k).
-symbol(X,Y,♚) :- p(X,Y,black,k).
-symbol(X,Y,࠰) :- legal_move(white,_,_,X,Y,_), !.
-symbol(X,Y,' ') :- empty(X,Y).
+symbol(X,Y,○) :-
+    p(X,Y,white,m),
+    !.
+
+symbol(X,Y,●) :-
+    p(X,Y,black,m),
+    !.
+
+symbol(X,Y,♔) :-
+    p(X,Y,white,k),
+    !.
+
+symbol(X,Y,♚) :-
+    p(X,Y,black,k),
+    !.
+
+symbol(X,Y,࠰) :-
+    legal_move(white,_,_,X,Y,_),
+    !.
+
+symbol(_,_,' ').
 
 
 
@@ -88,15 +103,15 @@ play :-
     nl,
     turn(white).
 
-turn(C) :-
-    \+ legal_move(C,_,_,_,_,_),
-    opponent(C,O),
+turn(P) :-
+    \+ legal_move(P,_,_,_,_,_),
+    opponent(P,O),
     format('Winner: ~w!', O).
 
-turn(C) :-
-    make_move(C),
+turn(P) :-
+    make_move(P),
     print_board,
-    opponent(C,O),
+    opponent(P,O),
     turn(O).
 
 opponent(white,black).
@@ -106,44 +121,46 @@ opponent(black,white).
 
 % Predicates to perform a move.
 
-make_move(C) :-
+make_move(P) :-
     read(Move),
     atom_codes(Move,[S1,S2,S3,S4]),
     X1 is S1 - 96,
     Y1 is S2 - 48,
     X2 is S3 - 96,
     Y2 is S4 - 48,
-    legal_move(C,X1,Y1,X2,Y2,Captures),
-    forall(member([X,Y],Captures),retract(p(X,Y,_,_))),
-    perform(X1,Y1,X2,Y2).
+    legal_move(P,X1,Y1,X2,Y2,Jumps),
+    forall(member([X,Y],Jumps),retract(p(X,Y,_,_))),
+    move_piece(X1,Y1,X2,Y2).
 
-make_move(C) :-
+make_move(P) :-
     writeln('Illegal move. Retry.'),
-    make_move(C).
+    make_move(P).
 
-legal_move(C,X1,Y1,X2,Y2,L) :-
-    p(X1,Y1,C,T),
+legal_move(P,X1,Y1,X2,Y2,Jumps) :-
+    p(X1,Y1,P,T),
     empty(X2,Y2),
-    capture(C,T,X1,Y1,X2,Y2,L).
+    capture(P,T,X1,Y1,X2,Y2,Jumps).
 
-legal_move(C,X1,Y1,X2,Y2,[]) :-
-    p(X1,Y1,C,T),
+legal_move(P,X1,Y1,X2,Y2,[]) :-
+    p(X1,Y1,P,T),
     empty(X2,Y2),
-    next_row(C,T,Y1,Y2),
+    next_row(P,T,Y1,Y2),
     next_col(X1,X2),
-    \+ legal_move(C,_,_,_,_,[_|_]).
+    \+ legal_move(P,_,_,_,_,[_|_]).
 
-capture(_,_,X,Y,X,Y,[]).
-capture(C,T,X1,Y1,X2,Y2,[[X,Y]|L]) :-
-    next_row(C,T,Y1,Y),
-    next_col(X1,X),
-    p(X,Y,OC,OT),
-    opponent(C,OC),
+capture(P,T,X1,Y1,X2,Y2,[[XJ,YJ]|Jumps]) :-
+    next_row(P,T,Y1,YJ),
+    next_col(X1,XJ),
+    opponent(P,O),
+    p(XJ,YJ,O,OT),
     (OT = m; T = k),
-    NewX1 is 2 * X - X1,
-    NewY1 is 2 * Y - Y1,
+    NewX1 is 2 * XJ - X1,
+    NewY1 is 2 * YJ - Y1,
     empty(NewX1,NewY1),
-    capture(C,T,NewX1,NewY1,X2,Y2,L).
+    capture(P,T,NewX1,NewY1,X2,Y2,Jumps).
+
+capture(P,T,X,Y,X,Y,[]) :-
+    \+ capture(P,T,X,Y,_,_,[_|_]).
 
 next_row(white,m,Y1,Y2) :-
     coord(Y1),
@@ -159,11 +176,18 @@ next_row(_,k,Y1,Y2) :-
 
 next_col(X1,X2) :- (X2 is X1 - 1; X2 is X1 + 1).
 
-perform(X1,Y1,X2,Y2) :-
+move_piece(X1,Y1,X2,Y2) :-
     (Y2 is 1; Y2 is 8),
-    retract(p(X1,Y1,C,m)),
-    asserta(p(X2,Y2,C,k)).
+    retract(p(X1,Y1,P,m)),
+    asserta(p(X2,Y2,P,k)).
 
-perform(X1,Y1,X2,Y2) :-
-    retract(p(X1,Y1,C,T)),
-    asserta(p(X2,Y2,C,T)).
+move_piece(X1,Y1,X2,Y2) :-
+    retract(p(X1,Y1,P,T)),
+    asserta(p(X2,Y2,P,T)).
+
+
+
+% Predicates to implement AI.
+
+
+
