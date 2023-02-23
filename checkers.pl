@@ -189,5 +189,70 @@ move_piece(X1,Y1,X2,Y2) :-
 
 % Predicates to implement AI.
 
+alpha_beta(P,Depth,Alpha,Beta,BestMove,Val) :-
+	Depth > 0,
+	bagof([X1,Y1,X2,Y2,Jumps],legal_move(P,X1,Y1,X2,Y2,Jumps),Moves),
+	!,
+	find_best(P,Depth,Moves,Alpha,Beta,BestMove,Val);
+	evaluate(P,Val).
+
+find_best(P,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
+	test_move(Move,Removals),
+    Depth1 is Depth - 1,
+    opponent(P,O),
+	alpha_beta(O,Depth1,Alpha,Beta,_,Val),
+	undo_move(Move,Removals),
+	good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal).
+
+good_enough(_,_,[],_,_,Move,Val,Move,Val) :- !.
+good_enough(P,_,_,Alpha,Beta,Move,Val,Move,Val) :-
+	(P == white, Val < Alpha, !);
+    (P == black, Val > Beta, !).
+
+good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-
+	new_bounds(P,Alpha,Beta,Val,NewAlpha,NewBeta),
+	find_best(P,Depth,Moves,NewAlpha,NewBeta,Move1,Val1),
+	better_of(P,Move,Val,Move1,Val1,BestMove,BestVal).
+
+new_bounds(white,Alpha,Beta,Val,Alpha,Val) :- Val < Beta, !.
+new_bounds(black,Alpha,Beta,Val,Val,Beta) :- Val > Alpha, !.
+new_bounds(_,Alpha,Beta,_,Alpha,Beta).
+
+better_of(P,Move,Val,_,Val1,Move,Val) :- 
+    (P == white, Val < Val1, !);
+    (P == black, Val > Val1, !).
+
+better_of(_,_,_,Move1,Val1,Move1,Val1).
+
+test_move([X1,Y1,X2,Y2,Jumps],[p(X1,Y1,P1,T1)|Old]) :-
+    p(X1,Y1,P1,T1),
+    findall(p(X,Y,P,T),(member([X,Y],Jumps),p(X,Y,P,T)),Old),
+    forall(member(M,Old),retract(M)),
+    move_piece(X1,Y1,X2,Y2).
+
+undo_move([_,_,X2,Y2,_],Old) :-
+    retract(p(X2,Y2,_,_)),
+    forall(member(M,Old),asserta(M)).
 
 
+% Heuristic function.
+
+evaluate(P,Val) :-
+	opponent(P,O),
+	count(P,m,Pm),
+	count(P,k,Pk),
+	count(O,m,Om),
+	count(O,k,Ok),
+	Es is Pm - Om + 2.5 * (Pk - Ok),
+	middle(P,Pmiddle),
+	middle(O,Omiddle),
+	Ec is Pmiddle - Omiddle,
+	Val is 80 * Es + 40 * Ec .%+ 40 * Eg + 20 * Tb + PawnValue.
+
+count(P,T,N) :-
+	findall(_,p(_,_,P,T),L),
+	length(L,N).
+
+middle(P,N) :-
+	findall(_,(p(X,Y,P,_),X>2,Y>2,X<7,Y<7),L),
+	length(L,N).
