@@ -247,7 +247,14 @@ evaluate(P,Val) :-
 	middle(P,Pmiddle),
 	middle(O,Omiddle),
 	Ec is Pmiddle - Omiddle,
-	Val is 80 * Es + 40 * Ec .%+ 40 * Eg + 20 * Tb + PawnValue.
+    column(P,Pc),
+    column(O,Oc),
+    Eg is Pc - Oc,
+    progress(P,Pb),
+    progress(O,Ob),
+    Tb is Pb - Ob,
+    matrix(P,PawnValue),
+	Val is 80 * Es + 40 * Ec + 40 * Eg + 20 * Tb + PawnValue.
 
 count(P,T,N) :-
 	findall(_,p(_,_,P,T),L),
@@ -256,3 +263,55 @@ count(P,T,N) :-
 middle(P,N) :-
 	findall(_,(p(X,Y,P,_),X>2,Y>2,X<7,Y<7),L),
 	length(L,N).
+
+column(P,N) :-
+    findall(_,(
+        p(X,Y,P,_),
+        X1 is X+2,
+        p(X1,Y,P,_),
+        X2 is X+1,
+        next_row(P,m,Y,Y2),
+        p(X2,Y2,P,_)
+    ),L),
+    length(L,N).
+
+progress(P,N) :-
+    ((P=white, findall(Y,p(_,Y,P,m),Men)); (P=black, findall(V,(p(_,Y,P,m),V is 9-Y),Men))),
+    sum_list(Men,M),
+    findall(8,p(_,_,P,k),Kings),
+    sum_list([M|Kings],N).
+
+matrix(P,N) :-
+    findall(V,(p(X,Y,P,_),value(P,X,Y,V)),L),
+    sum_list(L,N).
+
+value(white,8,1,100) :- !.
+value(white,_,1,120).
+value(white,1,2,110) :- !.
+value(white,7,2,140) :- !.
+value(white,_,2,130).
+value(white,8,3,120) :- !.
+value(white,_,3,140).
+value(white,_,4,150).
+value(white,8,5,170) :- !.
+value(white,_,5,160).
+value(white,_,6,170).
+value(white,8,7,190) :- !.
+value(white,_,7,180).
+value(white,1,8,190) :- !.
+value(white,_,8,200).
+value(black,1,8,100) :- !.
+value(black,_,8,120).
+value(black,2,7,140) :- !.
+value(black,8,7,110) :- !.
+value(black,_,7,130).
+value(black,1,6,120) :- !.
+value(black,_,6,140).
+value(black,_,5,150).
+value(black,1,4,170) :- !.
+value(black,_,4,160).
+value(black,_,3,170).
+value(black,1,2,190) :- !.
+value(black,_,2,180).
+value(black,8,1,190) :- !.
+value(black,_,1,200).
