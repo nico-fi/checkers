@@ -189,129 +189,139 @@ move_piece(X1,Y1,X2,Y2) :-
 
 % Predicates to implement AI.
 
-alpha_beta(P,Depth,Alpha,Beta,BestMove,Val) :-
+alpha_beta(P,Depth,Alpha,Beta,BestMove,BestVal) :-
 	Depth > 0,
 	bagof([X1,Y1,X2,Y2,Jumps],legal_move(P,X1,Y1,X2,Y2,Jumps),Moves),
 	!,
-	find_best(P,Depth,Moves,Alpha,Beta,BestMove,Val);
-	evaluate(P,Val).
+	find_best(P,Depth,Moves,Alpha,Beta,BestMove,BestVal).
+
+alpha_beta(_,_,_,_,_,Val) :- evaluate(Val).
 
 find_best(P,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
-	test_move(Move,Removals),
-    Depth1 is Depth - 1,
+	test_move(Move,Removed),
+    NewDepth is Depth - 1,
     opponent(P,O),
-	alpha_beta(O,Depth1,Alpha,Beta,_,Val),
-	undo_move(Move,Removals),
+	alpha_beta(O,NewDepth,Alpha,Beta,_,Val),
+	undo_move(Move,Removed),
 	good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal).
 
 good_enough(_,_,[],_,_,Move,Val,Move,Val) :- !.
 good_enough(P,_,_,Alpha,Beta,Move,Val,Move,Val) :-
-	(P == white, Val < Alpha, !);
-    (P == black, Val > Beta, !).
+	(P = white, Val < Alpha, !);
+    (P = black, Val > Beta, !).
 
 good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-
 	new_bounds(P,Alpha,Beta,Val,NewAlpha,NewBeta),
-	find_best(P,Depth,Moves,NewAlpha,NewBeta,Move1,Val1),
-	better_of(P,Move,Val,Move1,Val1,BestMove,BestVal).
+	find_best(P,Depth,Moves,NewAlpha,NewBeta,NewMove,NewVal),
+	better_of(P,Move,Val,NewMove,NewVal,BestMove,BestVal).
 
 new_bounds(white,Alpha,Beta,Val,Alpha,Val) :- Val < Beta, !.
 new_bounds(black,Alpha,Beta,Val,Val,Beta) :- Val > Alpha, !.
 new_bounds(_,Alpha,Beta,_,Alpha,Beta).
 
-better_of(P,Move,Val,_,Val1,Move,Val) :- 
-    (P == white, Val < Val1, !);
-    (P == black, Val > Val1, !).
+better_of(P,Move,Val,_,NewVal,Move,Val) :-
+    (P = white, Val < NewVal, !);
+    (P = black, Val > NewVal, !).
 
-better_of(_,_,_,Move1,Val1,Move1,Val1).
+better_of(_,_,_,NewMove,NewVal,NewMove,NewVal).
 
-test_move([X1,Y1,X2,Y2,Jumps],[p(X1,Y1,P1,T1)|Old]) :-
+test_move([X1,Y1,X2,Y2,Jumps],[p(X1,Y1,P1,T1)|Removed]) :-
     p(X1,Y1,P1,T1),
-    findall(p(X,Y,P,T),(member([X,Y],Jumps),p(X,Y,P,T)),Old),
-    forall(member(M,Old),retract(M)),
+    findall(p(X,Y,P,T),(member([X,Y],Jumps),p(X,Y,P,T)),Removed),
+    forall(member(M,Removed),retract(M)),
     move_piece(X1,Y1,X2,Y2).
 
-undo_move([_,_,X2,Y2,_],Old) :-
+undo_move([_,_,X2,Y2,_],Removed) :-
     retract(p(X2,Y2,_,_)),
-    forall(member(M,Old),asserta(M)).
+    forall(member(M,Removed),asserta(M)).
 
 
 % Heuristic function.
 
-evaluate(P,Val) :-
-	opponent(P,O),
-	count(P,m,Pm),
-	count(P,k,Pk),
-	count(O,m,Om),
-	count(O,k,Ok),
-	Es is Pm - Om + 2.5 * (Pk - Ok),
-	middle(P,Pmiddle),
-	middle(O,Omiddle),
-	Ec is Pmiddle - Omiddle,
-    column(P,Pc),
-    column(O,Oc),
-    Eg is Pc - Oc,
-    progress(P,Pb),
-    progress(O,Ob),
-    Tb is Pb - Ob,
-    matrix(P,PawnValue),
-	Val is 80 * Es + 40 * Ec + 40 * Eg + 20 * Tb + PawnValue.
+evaluate(Score) :-
+	count_pawns(white,m,WhiteMen),
+    count_pawns(black,m,BlackMen),
+	count_pawns(white,k,WhiteKings),
+	count_pawns(black,k,BlackKings),
+	State is WhiteMen - BlackMen + 2.5 * (WhiteKings - BlackKings),
+	count_center(white,WhiteCenter),
+	count_center(black,BlackCenter),
+	Center is WhiteCenter - BlackCenter,
+    count_columns(white,WhiteColumns),
+    count_columns(black,BlackColumns),
+    Columns is WhiteColumns - BlackColumns,
+    count_progress(white,WhiteProgress),
+    count_progress(black,BlackProgress),
+    Progress is WhiteProgress - BlackProgress,
+    count_values(white,WhiteValues),
+    count_values(black,BlackValues),
+    Value is WhiteValues - BlackValues,
+	Score is 80 * State + 40 * Center + 40 * Columns + 20 * Progress + Value.
 
-count(P,T,N) :-
+count_pawns(P,T,N) :-
 	findall(_,p(_,_,P,T),L),
 	length(L,N).
 
-middle(P,N) :-
-	findall(_,(p(X,Y,P,_),X>2,Y>2,X<7,Y<7),L),
+count_center(P,N) :-
+	findall(_,(
+        p(X,Y,P,_),
+        X > 2,
+        X < 7,
+        Y > 2,
+        Y < 7
+    ),L),
 	length(L,N).
 
-column(P,N) :-
+count_columns(P,N) :-
     findall(_,(
         p(X,Y,P,_),
-        X1 is X+2,
-        p(X1,Y,P,_),
-        X2 is X+1,
-        next_row(P,m,Y,Y2),
-        p(X2,Y2,P,_)
+        XR is X + 2,
+        p(XR,Y,P,_),
+        XU is X + 1,
+        next_row(P,m,Y,YU),
+        p(XU,YU,P,_)
     ),L),
     length(L,N).
 
-progress(P,N) :-
-    ((P=white, findall(Y,p(_,Y,P,m),Men)); (P=black, findall(V,(p(_,Y,P,m),V is 9-Y),Men))),
-    sum_list(Men,M),
-    findall(8,p(_,_,P,k),Kings),
-    sum_list([M|Kings],N).
-
-matrix(P,N) :-
-    findall(V,(p(X,Y,P,_),value(P,X,Y,V)),L),
+count_progress(P,N) :-
+    (P = white, S = 0; P = black, S = 9),
+    findall(abs(S - Y),p(_,Y,P,m),ManProgress),
+    findall(8,p(_,_,P,k),KingProgress),
+    append(ManProgress,KingProgress,L),
     sum_list(L,N).
 
-value(white,8,1,100) :- !.
-value(white,_,1,120).
-value(white,1,2,110) :- !.
-value(white,7,2,140) :- !.
-value(white,_,2,130).
-value(white,8,3,120) :- !.
-value(white,_,3,140).
-value(white,_,4,150).
-value(white,8,5,170) :- !.
-value(white,_,5,160).
-value(white,_,6,170).
-value(white,8,7,190) :- !.
-value(white,_,7,180).
-value(white,1,8,190) :- !.
-value(white,_,8,200).
-value(black,1,8,100) :- !.
-value(black,_,8,120).
-value(black,2,7,140) :- !.
-value(black,8,7,110) :- !.
-value(black,_,7,130).
-value(black,1,6,120) :- !.
-value(black,_,6,140).
-value(black,_,5,150).
-value(black,1,4,170) :- !.
-value(black,_,4,160).
-value(black,_,3,170).
-value(black,1,2,190) :- !.
-value(black,_,2,180).
-value(black,8,1,190) :- !.
-value(black,_,1,200).
+count_values(P,N) :-
+    findall(Val,(p(X,Y,P,T),value(X,Y,P,T,Val)),L),
+    sum_list(L,N).
+
+value(8,1,white,m,100) :- !.
+value(_,1,white,m,120).
+value(1,2,white,m,110) :- !.
+value(7,2,white,m,140) :- !.
+value(_,2,white,m,130).
+value(8,3,white,m,120) :- !.
+value(_,3,white,m,140).
+value(_,4,white,m,150).
+value(8,5,white,m,170) :- !.
+value(_,5,white,m,160).
+value(_,6,white,m,170).
+value(8,7,white,m,190) :- !.
+value(_,7,white,m,180).
+value(1,8,white,m,190) :- !.
+value(_,8,white,m,200).
+value(1,8,black,m,100) :- !.
+value(_,8,black,m,120).
+value(8,7,black,m,110) :- !.
+value(2,7,black,m,140) :- !.
+value(_,7,black,m,130).
+value(1,6,black,m,120) :- !.
+value(_,6,black,m,140).
+value(_,5,black,m,150).
+value(1,4,black,m,170) :- !.
+value(_,4,black,m,160).
+value(_,3,black,m,170).
+value(1,2,black,m,190) :- !.
+value(_,2,black,m,180).
+value(8,1,black,m,190) :- !.
+value(_,1,black,m,200).
+value(_,_,_,k,200).
