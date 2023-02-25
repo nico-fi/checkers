@@ -68,24 +68,13 @@ print_row(Y) :-
     format(' ~w │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │~n', [Y|L]),
     writeln('   │       │       │       │       │       │       │       │       │').
 
-symbol(X,Y,○) :-
-    p(X,Y,white,m),
-    !.
-
-symbol(X,Y,●) :-
-    p(X,Y,black,m),
-    !.
-
-symbol(X,Y,♔) :-
-    p(X,Y,white,k),
-    !.
-
-symbol(X,Y,♚) :-
-    p(X,Y,black,k),
-    !.
-
+symbol(X,Y,○) :- p(X,Y,white,m), !.
+symbol(X,Y,●) :- p(X,Y,black,m), !.
+symbol(X,Y,♔) :- p(X,Y,white,k), !.
+symbol(X,Y,♚) :- p(X,Y,black,k), !.
 symbol(X,Y,࠰) :-
-    legal_move(white,_,_,X,Y,_),
+    legal_moves(black,Moves),
+    member([_,_,X,Y,_],Moves),
     !.
 
 symbol(_,_,' ').
@@ -104,7 +93,8 @@ play :-
     turn(white).
 
 turn(P) :-
-    \+ legal_move(P,_,_,_,_,_),
+    \+ legal_moves(P,_),
+    !,
     opponent(P,O),
     format('Winner: ~w!', O).
 
@@ -121,32 +111,44 @@ opponent(black,white).
 
 % Predicates to perform a move.
 
-make_move(P) :-
+make_move(white) :-
+    alpha_beta(white,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    forall(member([X,Y],Jumps),retract(p(X,Y,_,_))),
+    move_piece(X1,Y1,X2,Y2),
+    !.
+
+make_move(black) :-
     read(Move),
     atom_codes(Move,[S1,S2,S3,S4]),
     X1 is S1 - 96,
     Y1 is S2 - 48,
     X2 is S3 - 96,
     Y2 is S4 - 48,
-    legal_move(P,X1,Y1,X2,Y2,Jumps),
+    legal_moves(black,Moves),
+    member([X1,Y1,X2,Y2,Jumps],Moves),
     forall(member([X,Y],Jumps),retract(p(X,Y,_,_))),
-    move_piece(X1,Y1,X2,Y2).
+    move_piece(X1,Y1,X2,Y2),
+    !.
 
-make_move(P) :-
+make_move(black) :-
     writeln('Illegal move. Retry.'),
-    make_move(P).
+    make_move(black).
 
-legal_move(P,X1,Y1,X2,Y2,Jumps) :-
-    p(X1,Y1,P,T),
-    empty(X2,Y2),
-    capture(P,T,X1,Y1,X2,Y2,Jumps).
+legal_moves(P,Moves) :-
+    bagof([X1,Y1,X2,Y2,Jumps],(
+        p(X1,Y1,P,T),
+        empty(X2,Y2),
+        capture(P,T,X1,Y1,X2,Y2,Jumps)
+    ),Moves),
+    !.
 
-legal_move(P,X1,Y1,X2,Y2,[]) :-
-    p(X1,Y1,P,T),
-    empty(X2,Y2),
-    next_row(P,T,Y1,Y2),
-    next_col(X1,X2),
-    \+ legal_move(P,_,_,_,_,[_|_]).
+legal_moves(P,Moves) :-
+    bagof([X1,Y1,X2,Y2,[]],(
+        p(X1,Y1,P,T),
+        empty(X2,Y2),
+        next_row(P,T,Y1,Y2),
+        next_col(X1,X2)
+    ),Moves).
 
 capture(P,T,X1,Y1,X2,Y2,[[XJ,YJ]|Jumps]) :-
     next_row(P,T,Y1,YJ),
@@ -157,27 +159,24 @@ capture(P,T,X1,Y1,X2,Y2,[[XJ,YJ]|Jumps]) :-
     NewX1 is 2 * XJ - X1,
     NewY1 is 2 * YJ - Y1,
     empty(NewX1,NewY1),
-    capture(P,T,NewX1,NewY1,X2,Y2,Jumps).
+    capture(P,T,NewX1,NewY1,X2,Y2,Jumps),
+    !.
 
-capture(P,T,X,Y,X,Y,[]) :-
-    \+ capture(P,T,X,Y,_,_,[_|_]).
+capture(_,_,X,Y,X,Y,[]).
 
-next_row(white,m,Y1,Y2) :-
-    coord(Y1),
-    Y2 is Y1 + 1.
-
-next_row(black,m,Y1,Y2) :-
-    coord(Y1),
-    Y2 is Y1 - 1.
-
+next_row(white,m,Y1,Y2) :- Y2 is Y1 + 1, !.
+next_row(black,m,Y1,Y2) :- Y2 is Y1 - 1, !.
 next_row(_,k,Y1,Y2) :-
-    coord(Y1),
-    (Y2 is Y1 - 1; Y2 is Y1 + 1).
+    (Y1 > 1, Y2 is Y1 - 1);
+    (Y1 < 8, Y2 is Y1 + 1).
 
-next_col(X1,X2) :- (X2 is X1 - 1; X2 is X1 + 1).
+next_col(X1,X2) :-
+    (X1 > 1, X2 is X1 - 1);
+    (X1 < 8, X2 is X1 + 1).
 
 move_piece(X1,Y1,X2,Y2) :-
     (Y2 is 1; Y2 is 8),
+    !,
     retract(p(X1,Y1,P,m)),
     asserta(p(X2,Y2,P,k)).
 
@@ -191,11 +190,11 @@ move_piece(X1,Y1,X2,Y2) :-
 
 alpha_beta(P,Depth,Alpha,Beta,BestMove,BestVal) :-
 	Depth > 0,
-	bagof([X1,Y1,X2,Y2,Jumps],legal_move(P,X1,Y1,X2,Y2,Jumps),Moves),
+	legal_moves(P,Moves),
 	!,
 	find_best(P,Depth,Moves,Alpha,Beta,BestMove,BestVal).
 
-alpha_beta(_,_,_,_,_,Val) :- evaluate(Val).
+alpha_beta(_,_,_,_,_,Val) :- evaluate(Val).  % No legal moves or maximum depth reached. Evaluate the board
 
 find_best(P,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 	test_move(Move,Removed),
@@ -205,25 +204,21 @@ find_best(P,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 	undo_move(Move,Removed),
 	good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal).
 
-good_enough(_,_,[],_,_,Move,Val,Move,Val) :- !.
-good_enough(P,_,_,Alpha,Beta,Move,Val,Move,Val) :-
-	(P = white, Val < Alpha, !);
-    (P = black, Val > Beta, !).
-
-good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-
+good_enough(_,_,[],_,_,Move,Val,Move,Val) :- !.                      % No other candidate moves
+good_enough(white,_,_,_,Beta,Move,Val,Move,Val) :- Val > Beta, !.    % Maximizer attained upper bound
+good_enough(black,_,_,Alpha,_,Move,Val,Move,Val) :- Val < Alpha, !.  % Minimizer attained lower bound
+good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-   % Refine bounds and continue
 	new_bounds(P,Alpha,Beta,Val,NewAlpha,NewBeta),
 	find_best(P,Depth,Moves,NewAlpha,NewBeta,NewMove,NewVal),
 	better_of(P,Move,Val,NewMove,NewVal,BestMove,BestVal).
 
-new_bounds(white,Alpha,Beta,Val,Alpha,Val) :- Val < Beta, !.
-new_bounds(black,Alpha,Beta,Val,Val,Beta) :- Val > Alpha, !.
-new_bounds(_,Alpha,Beta,_,Alpha,Beta).
+new_bounds(white,Alpha,Beta,Val,Val,Beta) :- Val > Alpha, !.  % Maximizer increased lower bound
+new_bounds(black,Alpha,Beta,Val,Alpha,Val) :- Val < Beta, !.  % Minimizer decreased upper bound
+new_bounds(_,Alpha,Beta,_,Alpha,Beta).                        % Otherwise bounds unchanged
 
-better_of(P,Move,Val,_,NewVal,Move,Val) :-
-    (P = white, Val < NewVal, !);
-    (P = black, Val > NewVal, !).
-
-better_of(_,_,_,NewMove,NewVal,NewMove,NewVal).
+better_of(white,Move,Val,_,NewVal,Move,Val) :- Val > NewVal, !.  % Move is better than NewMove. Maximizer prefers higher values 
+better_of(black,Move,Val,_,NewVal,Move,Val) :- Val < NewVal, !.  % Move is better than NewMove. Minimizer prefers lower values
+better_of(_,_,_,NewMove,NewVal,NewMove,NewVal).                  % Otherwise NewMove is better than Move
 
 test_move([X1,Y1,X2,Y2,Jumps],[p(X1,Y1,P1,T1)|Removed]) :-
     p(X1,Y1,P1,T1),
@@ -234,6 +229,7 @@ test_move([X1,Y1,X2,Y2,Jumps],[p(X1,Y1,P1,T1)|Removed]) :-
 undo_move([_,_,X2,Y2,_],Removed) :-
     retract(p(X2,Y2,_,_)),
     forall(member(M,Removed),asserta(M)).
+
 
 
 % Heuristic function.
@@ -285,6 +281,7 @@ count_columns(P,N) :-
 
 count_progress(P,N) :-
     (P = white, S = 0; P = black, S = 9),
+    !,
     findall(abs(S - Y),p(_,Y,P,m),ManProgress),
     findall(8,p(_,_,P,k),KingProgress),
     append(ManProgress,KingProgress,L),
@@ -295,33 +292,33 @@ count_values(P,N) :-
     sum_list(L,N).
 
 value(8,1,white,m,100) :- !.
-value(_,1,white,m,120).
+value(_,1,white,m,120) :- !.
 value(1,2,white,m,110) :- !.
 value(7,2,white,m,140) :- !.
-value(_,2,white,m,130).
+value(_,2,white,m,130) :- !.
 value(8,3,white,m,120) :- !.
-value(_,3,white,m,140).
-value(_,4,white,m,150).
+value(_,3,white,m,140) :- !.
+value(_,4,white,m,150) :- !.
 value(8,5,white,m,170) :- !.
-value(_,5,white,m,160).
-value(_,6,white,m,170).
+value(_,5,white,m,160) :- !.
+value(_,6,white,m,170) :- !.
 value(8,7,white,m,190) :- !.
-value(_,7,white,m,180).
+value(_,7,white,m,180) :- !.
 value(1,8,white,m,190) :- !.
-value(_,8,white,m,200).
+value(_,8,white,m,200) :- !.
 value(1,8,black,m,100) :- !.
-value(_,8,black,m,120).
+value(_,8,black,m,120) :- !.
 value(8,7,black,m,110) :- !.
 value(2,7,black,m,140) :- !.
-value(_,7,black,m,130).
+value(_,7,black,m,130) :- !.
 value(1,6,black,m,120) :- !.
-value(_,6,black,m,140).
-value(_,5,black,m,150).
+value(_,6,black,m,140) :- !.
+value(_,5,black,m,150) :- !.
 value(1,4,black,m,170) :- !.
-value(_,4,black,m,160).
-value(_,3,black,m,170).
+value(_,4,black,m,160) :- !.
+value(_,3,black,m,170) :- !.
 value(1,2,black,m,190) :- !.
-value(_,2,black,m,180).
+value(_,2,black,m,180) :- !.
 value(8,1,black,m,190) :- !.
-value(_,1,black,m,200).
+value(_,1,black,m,200) :- !.
 value(_,_,_,k,200).
