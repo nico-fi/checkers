@@ -1,8 +1,9 @@
 % Predicates to define the state of the board.
 
-:- dynamic p/4.
+:- dynamic p/4, cpu/1.
 
 initialize_board :-
+    retractall(cpu(_)),
     retractall(p(_,_,_,_)),
     assert(p(2,1,white,m)),
     assert(p(4,1,white,m)),
@@ -29,55 +30,58 @@ initialize_board :-
     assert(p(5,8,black,m)),
     assert(p(7,8,black,m)).
 
-coord(C) :- member(C,[1,2,3,4,5,6,7,8]).
-
-empty(X,Y) :-
-    coord(X),
-    coord(Y),
+empty_cell(X,Y) :-
+    member(X,[1,3,5,7]),
+    member(Y,[2,4,6,8]),
     \+ p(X,Y,_,_).
+
+empty_cell(X,Y) :-
+    member(X,[2,4,6,8]),
+    member(Y,[1,3,5,7]),
+    \+ p(X,Y,_,_).
+
+opponent(white,black).
+opponent(black,white).
 
 
 
 % Predicates to display the board.
 
-print_board :-
+print_board(P) :-
+    legal_moves(P,Moves),
     tty_clear,
     writeln('   ┌───────┬───────┬───────┬───────┬───────┬───────┬───────┬───────┐'),
-    print_row(8),
+    print_row(8,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(7),
+    print_row(7,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(6),
+    print_row(6,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(5),
+    print_row(5,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(4),
+    print_row(4,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(3),
+    print_row(3,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(2),
+    print_row(2,Moves),
     writeln('   ├───────┼───────┼───────┼───────┼───────┼───────┼───────┼───────┤'),
-    print_row(1),
+    print_row(1,Moves),
     writeln('   └───────┴───────┴───────┴───────┴───────┴───────┴───────┴───────┘'),
     writeln('       a       b       c       d       e       f       g       h    '),
-    nl.
+    nl,nl.
 
-print_row(Y) :-
-    findall(S,(coord(X),symbol(X,Y,S)),L),
+print_row(Y,Moves) :-
+    findall(S,(member(X,[1,2,3,4,5,6,7,8]),symbol(X,Y,Moves,S)),L),
     writeln('   │       │       │       │       │       │       │       │       │'),
     format(' ~w │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │   ~w   │~n', [Y|L]),
     writeln('   │       │       │       │       │       │       │       │       │').
 
-symbol(X,Y,○) :- p(X,Y,white,m), !.
-symbol(X,Y,●) :- p(X,Y,black,m), !.
-symbol(X,Y,♔) :- p(X,Y,white,k), !.
-symbol(X,Y,♚) :- p(X,Y,black,k), !.
-symbol(X,Y,࠰) :-
-    legal_moves(black,Moves),
-    member([_,_,X,Y,_],Moves),
-    !.
-
-symbol(_,_,' ').
+symbol(X,Y,_,'○') :- p(X,Y,white,m), !.
+symbol(X,Y,_,'●') :- p(X,Y,black,m), !.
+symbol(X,Y,_,'♔') :- p(X,Y,white,k), !.
+symbol(X,Y,_,'♚') :- p(X,Y,black,k), !.
+symbol(X,Y,Moves,'𐤟') :- member([_,_,X,Y,_],Moves), !.
+symbol(_,_,_,' ').
 
 
 
@@ -87,10 +91,17 @@ symbol(_,_,' ').
 
 play :-
     initialize_board,
-    print_board,
-    writeln('Play moves by entering coordinates followed by a period. For example: b3c4.'),
-    nl,
+    select_color,
+    print_board(white),
     turn(white).
+
+select_color :-
+    writeln('Select your color [white./black.]: '),
+    read(P),
+    (member(P,[white,black]); select_color),
+    !,
+    opponent(P,O),
+    asserta(cpu(O)).
 
 turn(P) :-
     \+ legal_moves(P,_),
@@ -100,69 +111,78 @@ turn(P) :-
 
 turn(P) :-
     make_move(P),
-    print_board,
     opponent(P,O),
+    print_board(O),
     turn(O).
-
-opponent(white,black).
-opponent(black,white).
 
 
 
 % Predicates to perform a move.
 
-make_move(white) :-
-    alpha_beta(white,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
-    forall(member([X,Y],Jumps),retract(p(X,Y,_,_))),
+make_move(P) :-
+    cpu(P),
+    alpha_beta_search(P,5,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2),
+    forall(member([X,Y],Jumps),retract(p(X,Y,_,_))),
     !.
 
-make_move(black) :-
+make_move(P) :-
+    legal_moves(P,Moves),
+    writeln('Enter coordinates followed by a period. For example: b3c4.\n'),
+    read_move(Moves,[X1,Y1,X2,Y2,Jumps]),
+    move_piece(X1,Y1,X2,Y2),
+    forall(member([X,Y],Jumps),retract(p(X,Y,_,_))).
+
+read_move(Moves,[X1,Y1,X2,Y2,Jumps]) :-
     read(Move),
-    atom_codes(Move,[S1,S2,S3,S4]),
-    X1 is S1 - 96,
-    Y1 is S2 - 48,
-    X2 is S3 - 96,
-    Y2 is S4 - 48,
-    legal_moves(black,Moves),
+    atom_codes(Move,[C1,C2,C3,C4]),
+    X1 is C1 - 96,
+    Y1 is C2 - 48,
+    X2 is C3 - 96,
+    Y2 is C4 - 48,
     member([X1,Y1,X2,Y2,Jumps],Moves),
-    forall(member([X,Y],Jumps),retract(p(X,Y,_,_))),
-    move_piece(X1,Y1,X2,Y2),
     !.
 
-make_move(black) :-
-    writeln('Illegal move. Retry.'),
-    make_move(black).
+read_move(Moves,Move) :-
+    writeln('Illegal move. Try again.'),
+    read_move(Moves,Move).
 
 legal_moves(P,Moves) :-
-    bagof([X1,Y1,X2,Y2,Jumps],(
+    bagof([X1,Y1,X2,Y2,Jumps],T^(
         p(X1,Y1,P,T),
-        empty(X2,Y2),
-        capture(P,T,X1,Y1,X2,Y2,Jumps)
-    ),Moves),
+        empty_cell(X2,Y2),
+        capture(P,T,X1,Y1,X2,Y2,[],Jumps)
+    ),Candidates),
+    check_priority(Candidates,Moves),
     !.
 
 legal_moves(P,Moves) :-
-    bagof([X1,Y1,X2,Y2,[]],(
+    bagof([X1,Y1,X2,Y2,[]],T^(
         p(X1,Y1,P,T),
-        empty(X2,Y2),
+        empty_cell(X2,Y2),
         next_row(P,T,Y1,Y2),
         next_col(X1,X2)
     ),Moves).
 
-capture(P,T,X1,Y1,X2,Y2,[[XJ,YJ]|Jumps]) :-
+capture(P,T,X1,Y1,X2,Y2,PrevJumps,[[XJ,YJ]|Jumps]) :-
     next_row(P,T,Y1,YJ),
     next_col(X1,XJ),
+    \+ member([XJ,YJ],PrevJumps),
     opponent(P,O),
     p(XJ,YJ,O,OT),
     (OT = m; T = k),
     NewX1 is 2 * XJ - X1,
     NewY1 is 2 * YJ - Y1,
-    empty(NewX1,NewY1),
-    capture(P,T,NewX1,NewY1,X2,Y2,Jumps),
+    empty_cell(NewX1,NewY1),
+    capture(P,T,NewX1,NewY1,X2,Y2,[[XJ,YJ]|PrevJumps],Jumps),
     !.
 
-capture(_,_,X,Y,X,Y,[]).
+capture(_,_,X,Y,X,Y,_,[]).
+
+check_priority(Candidates,Moves) :-
+    findall(Len,(member([_,_,_,_,Jumps],Candidates),length(Jumps,Len)),Lengths),
+    max_list(Lengths,Max),
+    findall([X1,Y1,X2,Y2,Jumps],(member([X1,Y1,X2,Y2,Jumps],Candidates),length(Jumps,Max)),Moves).
 
 next_row(white,m,Y1,Y2) :- Y2 is Y1 + 1, !.
 next_row(black,m,Y1,Y2) :- Y2 is Y1 - 1, !.
@@ -177,7 +197,7 @@ next_col(X1,X2) :-
 move_piece(X1,Y1,X2,Y2) :-
     (Y2 is 1; Y2 is 8),
     !,
-    retract(p(X1,Y1,P,m)),
+    retract(p(X1,Y1,P,_)),
     asserta(p(X2,Y2,P,k)).
 
 move_piece(X1,Y1,X2,Y2) :-
@@ -188,19 +208,19 @@ move_piece(X1,Y1,X2,Y2) :-
 
 % Predicates to implement AI.
 
-alpha_beta(P,Depth,Alpha,Beta,BestMove,BestVal) :-
+alpha_beta_search(P,Depth,Alpha,Beta,BestMove,BestVal) :-
 	Depth > 0,
 	legal_moves(P,Moves),
 	!,
 	find_best(P,Depth,Moves,Alpha,Beta,BestMove,BestVal).
 
-alpha_beta(_,_,_,_,_,Val) :- evaluate(Val).  % No legal moves or maximum depth reached. Evaluate the board
+alpha_beta_search(_,_,_,_,_,Val) :- evaluate(Val).  % No legal moves or maximum depth reached. Evaluate the board
 
 find_best(P,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 	test_move(Move,Removed),
     NewDepth is Depth - 1,
     opponent(P,O),
-	alpha_beta(O,NewDepth,Alpha,Beta,_,Val),
+	alpha_beta_search(O,NewDepth,Alpha,Beta,_,Val),
 	undo_move(Move,Removed),
 	good_enough(P,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal).
 
