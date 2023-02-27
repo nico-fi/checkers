@@ -1,5 +1,14 @@
-% Evaluate the board state using a heuristic function.
-evaluate_board(Score) :-
+% Evaluate the board state using a basic heuristic function.
+evaluate_board(basic,Score) :-
+	count_pieces(white,m,WhiteMen),
+    count_pieces(black,m,BlackMen),
+	count_pieces(white,k,WhiteKings),
+	count_pieces(black,k,BlackKings),
+	Score is WhiteMen - BlackMen + 1.5 * (WhiteKings - BlackKings).
+
+
+% Evaluate the board state using an optimized heuristic function.
+evaluate_board(improved,Score) :-
 	count_pieces(white,m,WhiteMen),
     count_pieces(black,m,BlackMen),
 	count_pieces(white,k,WhiteKings),

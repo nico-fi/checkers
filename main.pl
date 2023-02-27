@@ -54,8 +54,8 @@ select_color :-
     read(Player),
     (member(Player,[white,black]); select_color),
     !,
-    opponent(Player,O),
-    asserta(cpu(O)).
+    opponent(Player,Opp),
+    asserta(cpu(Opp)).
 
 
 % Match a player to his opponent.
@@ -67,19 +67,31 @@ opponent(black,white).
 turn(Player) :-
     \+ legal_moves(Player,_),
     !,
-    opponent(Player,O),
-    format('Winner: ~w!', O).
+    opponent(Player,Opp),
+    format('Winner: ~w!', Opp).
 
 
 % Play a new CPU turn.
 turn(Player) :-
     cpu(Player),
     !,
-    alpha_beta_search(Player,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,4,improved,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
-    opponent(Player,O),
-    print_board(O),
-    turn(O).
+    opponent(Player,Opp),
+    print_board(Opp),
+    turn(Opp).
+
+
+% Uncomment this clause to simulate a CPU vs CPU game.
+/*
+turn(Player) :-
+    !,
+    alpha_beta_search(Player,4,basic,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    move_piece(X1,Y1,X2,Y2,Jumps),
+    opponent(Player,Opp),
+    print_board(Opp),
+    turn(Opp).
+*/
 
 
 % Play a new user turn.
@@ -88,9 +100,9 @@ turn(Player) :-
     writeln('Enter coordinates followed by a period. For example: b3c4.\n'),
     read_move(Moves,[X1,Y1,X2,Y2,Jumps]),
     move_piece(X1,Y1,X2,Y2,Jumps),
-    opponent(Player,O),
-    print_board(O),
-    turn(O).
+    opponent(Player,Opp),
+    print_board(Opp),
+    turn(Opp).
 
 
 % Read a move from the keyboard.

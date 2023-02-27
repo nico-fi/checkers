@@ -51,9 +51,9 @@ next_col(X1,X2) :-
 jump(Player,Fig,X1,Y1,X2,Y2,PrevJumps,[[XJ,YJ]|Jumps]) :-
     next_row(Player,Fig,Y1,YJ),
     next_col(X1,XJ),
-    opponent(Player,O),
-    p(XJ,YJ,O,OFig),
-    (OFig = m; Fig = k),
+    opponent(Player,Opp),
+    p(XJ,YJ,Opp,OppFig),
+    (OppFig = m; Fig = k),
     \+ member([XJ,YJ],PrevJumps),
     NewX1 is 2 * XJ - X1,
     NewY1 is 2 * YJ - Y1,
