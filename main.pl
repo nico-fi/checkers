@@ -75,7 +75,7 @@ turn(Player) :-
 turn(Player) :-
     cpu(Player),
     !,
-    alpha_beta_search(Player,4,improved,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,3,cpu,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
@@ -83,15 +83,15 @@ turn(Player) :-
 
 
 % Uncomment this clause to simulate a CPU vs CPU game.
-/*
+
 turn(Player) :-
     !,
-    alpha_beta_search(Player,4,basic,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,3,user,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
     turn(Opp).
-*/
+
 
 
 % Play a new user turn.
