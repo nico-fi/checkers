@@ -4,7 +4,7 @@ legal_moves(Player,Moves) :-
         p(X1,Y1,Player,Fig),
         jump(Player,Fig,X1,Y1,X2,Y2,[],Jumps)
     ),Candidates),
-    longest_jump_moves(Candidates,Moves),
+    longest_jumps(Candidates,Moves),
     !.
 
 
@@ -65,7 +65,7 @@ jump(_,_,X,Y,X,Y,[_|_],[]).
 
 
 % Select moves with longest jump sequence.
-longest_jump_moves(Candidates,Moves) :-
+longest_jumps(Candidates,Moves) :-
     findall(Len,(member([_,_,_,_,Jumps],Candidates),length(Jumps,Len)),Lengths),
     max_list(Lengths,Max),
     findall([X1,Y1,X2,Y2,Jumps],(member([X1,Y1,X2,Y2,Jumps],Candidates),length(Jumps,Max)),Moves).

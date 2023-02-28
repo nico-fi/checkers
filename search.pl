@@ -1,3 +1,7 @@
+% Implementation of the alpha-beta search adapted from the book:
+% "Bratko, I. (2011). Prolog Programming for Artificial Intelligence (4th ed.). Addison-Wesley Educational, p. 585"
+
+
 % Perform a heuristic alpha-beta search to find the best move for a player.
 alpha_beta_search(Player,Depth,Heuristics,Alpha,Beta,BestMove,BestVal) :-
 	Depth > 0,
@@ -21,10 +25,10 @@ best(Player,Depth,Heuristics,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 
 
 % Check if a move is sufficiently good to make the correct decision. If not, try the next candidate move.
-good_enough(_,_,_,[],_,_,Move,Val,Move,Val) :- !.                           % No other candidate moves
-good_enough(white,_,_,_,_,Beta,Move,Val,Move,Val) :- Val > Beta, !.         % Maximizer attains upper bound
-good_enough(black,_,_,_,Alpha,_,Move,Val,Move,Val) :- Val < Alpha, !.       % Minimizer attains lower bound
-good_enough(Player,Depth,Heuristics,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-   % Otherwise refine bounds and continue
+good_enough(_,_,_,[],_,_,Move,Val,Move,Val) :- !.                           		% No other candidate moves
+good_enough(white,_,_,_,_,Beta,Move,Val,Move,Val) :- Val > Beta, !.         		% Maximizer attains upper bound
+good_enough(black,_,_,_,Alpha,_,Move,Val,Move,Val) :- Val < Alpha, !.       		% Minimizer attains lower bound
+good_enough(Player,Depth,Heuristics,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-  % Otherwise refine bounds and continue
 	new_bounds(Player,Alpha,Beta,Val,NewAlpha,NewBeta),
 	best(Player,Depth,Heuristics,Moves,NewAlpha,NewBeta,NewMove,NewVal),
 	is_better(Player,Move,Val,NewMove,NewVal,BestMove,BestVal).

@@ -23,7 +23,8 @@ evaluate_board(cpu,Score) :-
     count_threats(white,WhiteThreats),
     count_threats(black,BlackThreats),
     Threats is WhiteThreats - BlackThreats,
-    Score is 2 * Men + 3 * Kings + 0.8 * Center + Arrows + 0.5 * Progress + 1.5 * Back + Threats.
+    Score is 2 * Men + 3 * Kings + 0.5 * Center + Arrows + 0.5 * Progress + Back + Threats.
+
 
 evaluate_board(user,Score) :-
     count_pieces(white,m,WhiteMen),
@@ -47,7 +48,7 @@ evaluate_board(user,Score) :-
     count_threats(white,WhiteThreats),
     count_threats(black,BlackThreats),
     Threats is WhiteThreats - BlackThreats,
-    Score is 2 * Men + 3 * Kings + Center + Arrows + 0.5 * Progress + Back + Threats.
+    Score is 2 * Men + 3 * Kings + 0.5 * Center + Arrows + 0.5 * Progress + Back + Threats.
 
 
 % Count pieces of a given type.
@@ -97,13 +98,11 @@ count_progress(Player,N) :-
     N is Sum + 7 * Kings.
 
 
-% Count pieces threatened by the player.
+% Count threats to the opponent's pieces.
 count_threats(Player,N) :-
     findall(Jumps,(
         p(X1,Y1,Player,Fig),
-        empty_square(X2,Y2),
-        jump(Player,Fig,X1,Y1,X2,Y2,[],Jumps)
+        jump(Player,Fig,X1,Y1,_,_,[],Jumps)
     ),AllJumps),
-    append(AllJumps,List),
-    list_to_set(List,Set),
-    length(Set,N).
+    append(AllJumps,L),
+    length(L,N).
