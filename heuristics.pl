@@ -5,12 +5,12 @@ evaluate_board(cpu,Score) :-
     count_pieces(white,m,WhiteMen),
     count_pieces(black,m,BlackMen),
     Men is WhiteMen - BlackMen,
-	count_pieces(white,k,WhiteKings),
-	count_pieces(black,k,BlackKings),
-	Kings is WhiteKings - BlackKings,
-	count_center(white,WhiteCenter),
-	count_center(black,BlackCenter),
-	Center is WhiteCenter - BlackCenter,
+    count_pieces(white,k,WhiteKings),
+    count_pieces(black,k,BlackKings),
+    Kings is WhiteKings - BlackKings,
+    count_center(white,WhiteCenter),
+    count_center(black,BlackCenter),
+    Center is WhiteCenter - BlackCenter,
     count_arrows(white,WhiteArrows),
     count_arrows(black,BlackArrows),
     Arrows is WhiteArrows - BlackArrows,
@@ -23,18 +23,18 @@ evaluate_board(cpu,Score) :-
     count_threats(white,WhiteThreats),
     count_threats(black,BlackThreats),
     Threats is WhiteThreats - BlackThreats,
-	Score is 2 * Men + 3 * Kings + 0.8 * Center + Arrows + 0.5 * Progress + 1.5 * Back + Threats.
+    Score is 2 * Men + 3 * Kings + 0.8 * Center + Arrows + 0.5 * Progress + 1.5 * Back + Threats.
 
 evaluate_board(user,Score) :-
     count_pieces(white,m,WhiteMen),
     count_pieces(black,m,BlackMen),
     Men is WhiteMen - BlackMen,
-	count_pieces(white,k,WhiteKings),
-	count_pieces(black,k,BlackKings),
-	Kings is WhiteKings - BlackKings,
-	count_center(white,WhiteCenter),
-	count_center(black,BlackCenter),
-	Center is WhiteCenter - BlackCenter,
+    count_pieces(white,k,WhiteKings),
+    count_pieces(black,k,BlackKings),
+    Kings is WhiteKings - BlackKings,
+    count_center(white,WhiteCenter),
+    count_center(black,BlackCenter),
+    Center is WhiteCenter - BlackCenter,
     count_arrows(white,WhiteArrows),
     count_arrows(black,BlackArrows),
     Arrows is WhiteArrows - BlackArrows,
@@ -47,25 +47,25 @@ evaluate_board(user,Score) :-
     count_threats(white,WhiteThreats),
     count_threats(black,BlackThreats),
     Threats is WhiteThreats - BlackThreats,
-	Score is 2 * Men + 3 * Kings + Center + Arrows + 0.5 * Progress + Back + Threats.
+    Score is 2 * Men + 3 * Kings + Center + Arrows + 0.5 * Progress + Back + Threats.
 
 
 % Count pieces of a given type.
 count_pieces(Player,Fig,N) :-
-	findall(_,p(_,_,Player,Fig),L),
-	length(L,N).
+    findall(_,p(_,_,Player,Fig),L),
+    length(L,N).
 
 
 % Count pieces in the center of the board.
 count_center(Player,N) :-
-	findall(_,(
+    findall(_,(
         p(X,Y,Player,_),
         X > 2,
         X < 7,
         Y > 2,
         Y < 7
     ),L),
-	length(L,N).
+    length(L,N).
 
 
 % Count men in the back row.

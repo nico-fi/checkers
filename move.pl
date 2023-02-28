@@ -2,7 +2,6 @@
 legal_moves(Player,Moves) :-
     bagof([X1,Y1,X2,Y2,Jumps],Fig^(
         p(X1,Y1,Player,Fig),
-        empty_square(X2,Y2),
         jump(Player,Fig,X1,Y1,X2,Y2,[],Jumps)
     ),Candidates),
     longest_jump_moves(Candidates,Moves),
@@ -13,9 +12,9 @@ legal_moves(Player,Moves) :-
 legal_moves(Player,Moves) :-
     bagof([X1,Y1,X2,Y2,[]],Fig^(
         p(X1,Y1,Player,Fig),
-        empty_square(X2,Y2),
         next_row(Player,Fig,Y1,Y2),
-        next_col(X1,X2)
+        next_col(X1,X2),
+        empty_square(X2,Y2)
     ),Moves).
 
 
@@ -54,16 +53,15 @@ jump(Player,Fig,X1,Y1,X2,Y2,PrevJumps,[[XJ,YJ]|Jumps]) :-
     opponent(Player,Opp),
     p(XJ,YJ,Opp,OppFig),
     (OppFig = m; Fig = k),
-    \+ member([XJ,YJ],PrevJumps),
     NewX1 is 2 * XJ - X1,
     NewY1 is 2 * YJ - Y1,
     empty_square(NewX1,NewY1),
-    jump(Player,Fig,NewX1,NewY1,X2,Y2,[[XJ,YJ]|PrevJumps],Jumps),
-    !.
+    \+ member([XJ,YJ],PrevJumps),
+    jump(Player,Fig,NewX1,NewY1,X2,Y2,[[XJ,YJ]|PrevJumps],Jumps).
 
 
 % Base case for the recursive jump predicate.
-jump(_,_,X,Y,X,Y,_,[]).
+jump(_,_,X,Y,X,Y,[_|_],[]).
 
 
 % Select moves with longest jump sequence.

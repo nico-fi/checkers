@@ -13,8 +13,8 @@ alpha_beta_search(_,_,Heuristics,_,_,_,Val) :- evaluate_board(Heuristics,Val).
 % Select the best move from a list of candidates. Best is either maximum or minimum, depending on the player.
 best(Player,Depth,Heuristics,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 	simulate_move(Move,Removed),
-    NewDepth is Depth - 1,
-    opponent(Player,Opp),
+	NewDepth is Depth - 1,
+	opponent(Player,Opp),
 	alpha_beta_search(Opp,NewDepth,Heuristics,Alpha,Beta,_,Val),
 	undo_move(Move,Removed),
 	good_enough(Player,Depth,Heuristics,Moves,Alpha,Beta,Move,Val,BestMove,BestVal).
