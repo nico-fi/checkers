@@ -1,7 +1,7 @@
 % Evaluate the board state using a heuristic function.
-evaluate_board(_,inf) :- \+ legal_moves(black,_), !.
-evaluate_board(_,-inf) :- \+ legal_moves(white,_), !.
-evaluate_board(cpu,Score) :-
+evaluate_board(inf) :- \+ legal_moves(black,_), !.
+evaluate_board(-inf) :- \+ legal_moves(white,_), !.
+evaluate_board(Score) :-
     count_pieces(white,m,WhiteMen),
     count_pieces(black,m,BlackMen),
     Men is WhiteMen - BlackMen,
@@ -23,32 +23,7 @@ evaluate_board(cpu,Score) :-
     count_threats(white,WhiteThreats),
     count_threats(black,BlackThreats),
     Threats is WhiteThreats - BlackThreats,
-    Score is 2 * Men + 3 * Kings + 0.5 * Center + Arrows + 0.5 * Progress + Back + Threats.
-
-
-evaluate_board(user,Score) :-
-    count_pieces(white,m,WhiteMen),
-    count_pieces(black,m,BlackMen),
-    Men is WhiteMen - BlackMen,
-    count_pieces(white,k,WhiteKings),
-    count_pieces(black,k,BlackKings),
-    Kings is WhiteKings - BlackKings,
-    count_center(white,WhiteCenter),
-    count_center(black,BlackCenter),
-    Center is WhiteCenter - BlackCenter,
-    count_arrows(white,WhiteArrows),
-    count_arrows(black,BlackArrows),
-    Arrows is WhiteArrows - BlackArrows,
-    count_progress(white,WhiteProgress),
-    count_progress(black,BlackProgress),
-    Progress is WhiteProgress - BlackProgress,
-    count_back(white,WhiteBack),
-    count_back(black,BlackBack),
-    Back is WhiteBack - BlackBack,
-    count_threats(white,WhiteThreats),
-    count_threats(black,BlackThreats),
-    Threats is WhiteThreats - BlackThreats,
-    Score is 2 * Men + 3 * Kings + 0.5 * Center + Arrows + 0.5 * Progress + Back + Threats.
+    Score is 2 * Men + 3 * Kings + 0.5 * Center + Arrows + 0.5 * Progress + Back + 1.5 * Threats.
 
 
 % Count pieces of a given type.

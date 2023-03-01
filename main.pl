@@ -75,7 +75,7 @@ turn(Player) :-
 turn(Player) :-
     cpu(Player),
     !,
-    alpha_beta_search(Player,4,cpu,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,5,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
@@ -86,7 +86,7 @@ turn(Player) :-
 /*
 turn(Player) :-
     !,
-    alpha_beta_search(Player,4,user,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,5,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
