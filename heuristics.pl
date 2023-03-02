@@ -23,16 +23,19 @@ evaluate_board(Score) :-
     count_threats(white,WhiteThreats),
     count_threats(black,BlackThreats),
     Threats is WhiteThreats - BlackThreats,
-    Score is 2 * Men + 3 * Kings + 0.5 * Center + Arrows + 0.5 * Progress + Back + 1.5 * Threats.
+    count_mobility(white,WhiteMobility),
+    count_mobility(black,BlackMobility),
+    Mobility is WhiteMobility - BlackMobility,
+    Score is 2 * Men + 3 * Kings + 0.2 * Center + 0.5 * Arrows + 0.2 * Progress + Back + 1.5 * Threats + 0.2 * Mobility.
 
 
-% Count pieces of a given type.
+% For a given player, count pieces of a given type.
 count_pieces(Player,Fig,N) :-
     findall(_,p(_,_,Player,Fig),L),
     length(L,N).
 
 
-% Count pieces in the center of the board.
+% For a given player, count pieces in the center of the board.
 count_center(Player,N) :-
     findall(_,(
         p(X,Y,Player,_),
@@ -44,14 +47,14 @@ count_center(Player,N) :-
     length(L,N).
 
 
-% Count men in the back row.
+% For a given player, count men in the back row.
 count_back(Player,N) :-
     (Player = white, Back = 1, !; Player = black, Back = 8),
     findall(_,p(_,Back,Player,m),L),
     length(L,N).
 
 
-% Count formations of three pieces connected in the opponent's direction.
+% For a given player, count formations of three pieces connected in the opponent's direction.
 count_arrows(Player,N) :-
     findall(_,(
         p(X,Y,Player,_),
@@ -64,7 +67,7 @@ count_arrows(Player,N) :-
     length(L,N).
 
 
-% Count progress of pieces towards the opponent's side.
+% For a given player, count progress of pieces towards the opponent's side.
 count_progress(Player,N) :-
     (Player = white, Back = 1, !; Player = black, Back = 8),
     findall(abs(Back - Y),p(_,Y,Player,m),L),
@@ -73,11 +76,22 @@ count_progress(Player,N) :-
     N is Sum + 7 * Kings.
 
 
-% Count threats to the opponent's pieces.
+% For a given player, count possible jumps on the opponent's pieces.
 count_threats(Player,N) :-
     findall(Jumps,(
         p(X1,Y1,Player,Fig),
         jump(Player,Fig,X1,Y1,_,_,[],Jumps)
     ),AllJumps),
     append(AllJumps,L),
+    length(L,N).
+
+
+% For a given player, count possible non-jump moves.
+count_mobility(Player,N) :-
+    findall(_,(
+        p(X1,Y1,Player,Fig),
+        next_row(Player,Fig,Y1,Y2),
+        next_col(X1,X2),
+        empty_square(X2,Y2)
+    ),L),
     length(L,N).
