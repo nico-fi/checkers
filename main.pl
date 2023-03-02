@@ -83,18 +83,6 @@ turn(Player) :-
     turn(Opp).
 
 
-% Uncomment this clause to simulate a CPU vs CPU game.
-/*
-turn(Player) :-
-    !,
-    alpha_beta_search(Player,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
-    move_piece(X1,Y1,X2,Y2,Jumps),
-    opponent(Player,Opp),
-    print_board(Opp),
-    turn(Opp).
-*/
-
-
 % Play a new user turn.
 turn(Player) :-
     legal_moves(Player,Moves),
