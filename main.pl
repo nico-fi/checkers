@@ -52,10 +52,11 @@ initialize_board :-
 select_color :-
     writeln('Select your color [white./black.]: '),
     read(Player),
-    (member(Player,[white,black]); select_color),
+    member(Player,[white,black]),
     !,
     opponent(Player,Opp),
-    asserta(cpu(Opp)).
+    asserta(cpu(Opp));
+    select_color.
 
 
 % Match a player to his opponent.
@@ -75,7 +76,7 @@ turn(Player) :-
 turn(Player) :-
     cpu(Player),
     !,
-    alpha_beta_search(Player,5,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
@@ -86,7 +87,7 @@ turn(Player) :-
 /*
 turn(Player) :-
     !,
-    alpha_beta_search(Player,5,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    alpha_beta_search(Player,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
