@@ -80,13 +80,19 @@ turn(Player) :-
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
+    C1 is X1 + 96,
+    C2 is Y1 + 48,
+    C3 is X2 + 96,
+    C4 is Y2 + 48,
+    atom_codes(Move,[C1,C2,C3,C4]),
+    format('Last ~w move: ~w. ', [Player,Move]),
     turn(Opp).
 
 
 % Play a new user turn.
 turn(Player) :-
     legal_moves(Player,Moves),
-    writeln('Enter coordinates followed by a period. For example: b3c4.\n'),
+    writeln('Make a move by entering coordinates followed by a dot. E.g.: b3c4.\n'),
     read_move(Moves,[X1,Y1,X2,Y2,Jumps]),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
