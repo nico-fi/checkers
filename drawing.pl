@@ -8,7 +8,7 @@ print_logo :- writeln('
  ██████ ██   ██ ███████  ██████ ██   ██ ███████ ██   ██ ███████ 
 ───────────────────────────────────────────────────────────────
     
-To move the pieces, you can enter the coordinates followed by a dot. E.g.: b3c4.\n\n').
+To move the pieces, enter coordinates followed by a dot. Example: b3c4.\n\n').
 
 
 % Print the current state of the board and highlight the legal moves.
