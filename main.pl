@@ -12,6 +12,7 @@
 
 % Start a new game.
 play :-
+    print_logo,
     initialize_board,
     select_color,
     print_board(white),
@@ -50,7 +51,7 @@ initialize_board :-
 
 % Ask the user to select his color.
 select_color :-
-    writeln('Select your color [white./black.]: '),
+    write('Select your color [white./black.] '),
     read(Player),
     member(Player,[white,black]),
     !,
@@ -76,6 +77,7 @@ turn(Player) :-
 turn(Player) :-
     cpu(Player),
     !,
+    writeln('Thinking...\n'),
     search_move(Player,4,3,[X1,Y1,X2,Y2,Jumps]),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
@@ -85,14 +87,14 @@ turn(Player) :-
     C3 is X2 + 96,
     C4 is Y2 + 48,
     atom_codes(Move,[C1,C2,C3,C4]),
-    format('Last ~w move: ~w. ', [Player,Move]),
+    format('Last CPU move: ~w.\n\n', [Move]),
     turn(Opp).
 
 
 % Play a new user turn.
 turn(Player) :-
     legal_moves(Player,Moves),
-    writeln('Make a move by entering coordinates followed by a dot. E.g.: b3c4.\n'),
+    write('Your turn '),
     read_move(Moves,[X1,Y1,X2,Y2,Jumps]),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
@@ -113,5 +115,5 @@ read_move(Moves,[X1,Y1,X2,Y2,Jumps]) :-
 
 % Ask the user to enter a new legal move.
 read_move(Moves,Move) :-
-    writeln('Illegal move. Try again.'),
+    write('Try again '),
     read_move(Moves,Move).
