@@ -51,7 +51,7 @@ initialize_board :-
 
 % Ask the user to select his color.
 select_color :-
-    write('Select your color [white./black.] '),
+    write('Select your color [white./black.]: '),
     read(Player),
     member(Player,[white,black]),
     !,
