@@ -1,9 +1,36 @@
-% Implementation of the alpha-beta search adapted from the book:
-% "Bratko, I. (2011). Prolog Programming for Artificial Intelligence (4th ed.). Addison-Wesley Educational, p. 585"
+% Search for the best move using an iterative deepening alpha-beta search.
+search_move(Player,MinDepth,MaxTime,BestMove) :-
+	get_time(Start),
+	alpha_beta(Player,MinDepth,-inf,inf,CurrentBest,_),
+	get_time(End),
+	NewDepth is MinDepth + 1,
+	NewTime is Start + MaxTime - End,
+	iterative_deepening(Player,NewDepth,NewTime,CurrentBest,BestMove).
 
 
-% Perform a heuristic alpha-beta search to find the best move for a player.
-alpha_beta_search(Player,Depth,Alpha,Beta,BestMove,BestVal) :-
+% Repeatedly perform an alpha-beta search with increasing depth, until the time limit is reached. 
+iterative_deepening(Player,Depth,Time,_,BestMove) :-
+	get_time(Start),
+	findall(p(X,Y,Pl,Fig),p(X,Y,Pl,Fig),Old),
+	catch(
+		call_with_time_limit(Time,alpha_beta(Player,Depth,-inf,inf,CurrentBest,_)),
+		time_limit_exceeded,
+		(retractall(p(_,_,_,_)), forall(member(Piece,Old),asserta(Piece)), fail)
+	),
+	!,
+	get_time(End),
+	NewDepth is Depth + 1,
+	NewTime is Start + Time - End,
+	iterative_deepening(Player,NewDepth,NewTime,CurrentBest,BestMove).
+
+
+% If time limit is reached, return the best move found so far.
+iterative_deepening(_,_,_,BestMove,BestMove).
+
+
+% Perform a heuristic alpha-beta search. Implementation adapted from the book:
+% "Bratko, I. (2011). Prolog Programming for Artificial Intelligence (4th ed.). Addison-Wesley Educational, p. 585".
+alpha_beta(Player,Depth,Alpha,Beta,BestMove,BestVal) :-
 	Depth > 0,
 	legal_moves(Player,Moves),
 	!,
@@ -11,7 +38,7 @@ alpha_beta_search(Player,Depth,Alpha,Beta,BestMove,BestVal) :-
 
 
 % If maximum depth is reached or no legal moves are available, evaluate the board.
-alpha_beta_search(_,_,_,_,_,Val) :- evaluate_board(Val).
+alpha_beta(_,_,_,_,_,Val) :- evaluate_board(Val).
 
 
 % Select the best move from a list of candidates. Best is either maximum or minimum, depending on the player.
@@ -19,7 +46,7 @@ best(Player,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 	simulate_move(Move,Removed),
 	NewDepth is Depth - 1,
 	opponent(Player,Opp),
-	alpha_beta_search(Opp,NewDepth,Alpha,Beta,_,Val),
+	alpha_beta(Opp,NewDepth,Alpha,Beta,_,Val),
 	undo_move(Move,Removed),
 	good_enough(Player,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal).
 

@@ -76,7 +76,7 @@ turn(Player) :-
 turn(Player) :-
     cpu(Player),
     !,
-    alpha_beta_search(Player,4,-inf,inf,[X1,Y1,X2,Y2,Jumps],_),
+    search_move(Player,4,3,[X1,Y1,X2,Y2,Jumps]),
     move_piece(X1,Y1,X2,Y2,Jumps),
     opponent(Player,Opp),
     print_board(Opp),
