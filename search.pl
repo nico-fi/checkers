@@ -1,4 +1,5 @@
-% Search for the best move using an iterative deepening alpha-beta search.
+% Search for the best move using an iterative deepening alpha-beta search,
+% starting from a given depth and continuing until the available time runs out.
 search_move(Player,MinDepth,MaxTime,BestMove) :-
 	get_time(Start),
 	alpha_beta(Player,MinDepth,-inf,inf,CurrentBest,_),
@@ -8,14 +9,14 @@ search_move(Player,MinDepth,MaxTime,BestMove) :-
 	iterative_deepening(Player,NewDepth,NewTime,CurrentBest,BestMove).
 
 
-% Repeatedly perform an alpha-beta search with increasing depth, until the time limit is reached. 
+% Repeatedly perform an alpha-beta search with increasing depths, until the time limit is reached.
 iterative_deepening(Player,Depth,Time,_,BestMove) :-
 	get_time(Start),
-	findall(p(X,Y,Pl,Fig),p(X,Y,Pl,Fig),Old),
+	findall(p(X,Y,Pl,Fig),p(X,Y,Pl,Fig),OldState),
 	catch(
 		call_with_time_limit(Time,alpha_beta(Player,Depth,-inf,inf,CurrentBest,_)),
 		time_limit_exceeded,
-		(retractall(p(_,_,_,_)), forall(member(Piece,Old),asserta(Piece)), fail)
+		(retractall(p(_,_,_,_)), forall(member(Piece,OldState),assert(Piece)), fail)  % If the search is interrupted, restore the old state
 	),
 	!,
 	get_time(End),
@@ -24,8 +25,8 @@ iterative_deepening(Player,Depth,Time,_,BestMove) :-
 	iterative_deepening(Player,NewDepth,NewTime,CurrentBest,BestMove).
 
 
-% If time limit is reached, return the best move found so far.
-iterative_deepening(_,_,_,BestMove,BestMove).
+% If the time limit is reached, return the best move according to the deepest search.
+iterative_deepening(_,_,_,CurrentBest,CurrentBest).
 
 
 % Perform a heuristic alpha-beta search. Implementation adapted from the book:
@@ -37,8 +38,8 @@ alpha_beta(Player,Depth,Alpha,Beta,BestMove,BestVal) :-
 	best(Player,Depth,Moves,Alpha,Beta,BestMove,BestVal).
 
 
-% If maximum depth is reached or no legal moves are available, evaluate the board.
-alpha_beta(_,_,_,_,_,Val) :- evaluate_board(Val).
+% If the maximum depth is reached or no legal moves are available, evaluate the state.
+alpha_beta(_,_,_,_,_,Val) :- evaluate(Val).
 
 
 % Select the best move from a list of candidates. Best is either maximum or minimum, depending on the player.
@@ -52,16 +53,16 @@ best(Player,Depth,[Move|Moves],Alpha,Beta,BestMove,BestVal) :-
 
 
 % Check if a move is sufficiently good to make the correct decision. If not, try the next candidate move.
-good_enough(_,_,[],_,_,Move,Val,Move,Val) :- !.                           		% No other candidate moves
-good_enough(white,_,_,_,Beta,Move,Val,Move,Val) :- Val > Beta, !.         		% Maximizer attains upper bound
-good_enough(black,_,_,Alpha,_,Move,Val,Move,Val) :- Val < Alpha, !.       		% Minimizer attains lower bound
+good_enough(_,_,[],_,_,Move,Val,Move,Val) :- !.                          % No other candidate moves
+good_enough(white,_,_,_,Beta,Move,Val,Move,Val) :- Val > Beta, !.        % Maximizer attains upper bound
+good_enough(black,_,_,Alpha,_,Move,Val,Move,Val) :- Val < Alpha, !.      % Minimizer attains lower bound
 good_enough(Player,Depth,Moves,Alpha,Beta,Move,Val,BestMove,BestVal) :-  % Otherwise refine bounds and continue
 	new_bounds(Player,Alpha,Beta,Val,NewAlpha,NewBeta),
 	best(Player,Depth,Moves,NewAlpha,NewBeta,NewMove,NewVal),
 	is_better(Player,Move,Val,NewMove,NewVal,BestMove,BestVal).
 
 
-% Determine a new (Alpha,Beta) interval.
+% Update the values of alpha and beta.
 new_bounds(white,Alpha,Beta,Val,Val,Beta) :- Val > Alpha, !.     % Maximizer increases lower bound
 new_bounds(black,Alpha,Beta,Val,Alpha,Val) :- Val < Beta, !.     % Minimizer decreases upper bound
 new_bounds(_,Alpha,Beta,_,Alpha,Beta).                           % Otherwise bounds unchanged

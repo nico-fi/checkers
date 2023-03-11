@@ -1,7 +1,7 @@
-% Evaluate the board state using a heuristic function.
-evaluate_board(inf) :- \+ legal_moves(black,_), !.
-evaluate_board(-inf) :- \+ legal_moves(white,_), !.
-evaluate_board(Score) :-
+% Evaluate the game state using a heuristic function.
+evaluate(inf) :- \+ legal_moves(black,_), !.
+evaluate(-inf) :- \+ legal_moves(white,_), !.
+evaluate(Score) :-
     count_pieces(white,m,WhiteMen),
     count_pieces(black,m,BlackMen),
     Men is WhiteMen - BlackMen,
@@ -76,17 +76,17 @@ count_progress(Player,N) :-
     N is Sum + 7 * Kings.
 
 
-% For a given player, count possible jumps on the opponent's pieces.
+% For a given player, count potential jumps over the opponent's pieces.
 count_threats(Player,N) :-
     findall(Jumps,(
-        p(X1,Y1,Player,Fig),
-        jump(Player,Fig,X1,Y1,_,_,[],Jumps)
+        p(X,Y,Player,Fig),
+        jump(Player,Fig,X,Y,_,_,[],Jumps)
     ),AllJumps),
     append(AllJumps,L),
     length(L,N).
 
 
-% For a given player, count possible non-jump moves.
+% For a given player, count available non-jump moves.
 count_mobility(Player,N) :-
     findall(_,(
         p(X1,Y1,Player,Fig),
