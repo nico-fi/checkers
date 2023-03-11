@@ -1,7 +1,7 @@
 % Evaluate the game state using a heuristic function.
 evaluate(inf) :- \+ legal_moves(black,_), !.
 evaluate(-inf) :- \+ legal_moves(white,_), !.
-evaluate(Score) :-
+evaluate(Value) :-
     count_pieces(white,m,WhiteMen),
     count_pieces(black,m,BlackMen),
     Men is WhiteMen - BlackMen,
@@ -26,7 +26,7 @@ evaluate(Score) :-
     count_mobility(white,WhiteMobility),
     count_mobility(black,BlackMobility),
     Mobility is WhiteMobility - BlackMobility,
-    Score is 2 * Men + 3 * Kings + 0.2 * Center + 0.5 * Arrows + 0.2 * Progress + Back + Threats + 0.2 * Mobility.
+    Value is 2 * Men + 3 * Kings + 0.2 * Center + 0.5 * Arrows + 0.2 * Progress + Back + Threats + 0.2 * Mobility.
 
 
 % For a given player, count pieces of a given type.
