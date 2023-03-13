@@ -1,5 +1,5 @@
 % Search for the best move using an iterative deepening alpha-beta search,
-% starting from a given depth and continuing until the available time runs out.
+% starting from a given depth and going on if the available time has not run out.
 search_move(Player,MinDepth,MaxTime,BestMove) :-
 	get_time(Start),
 	alpha_beta(Player,MinDepth,-inf,inf,CurrentBest,_),
@@ -12,11 +12,11 @@ search_move(Player,MinDepth,MaxTime,BestMove) :-
 % Repeatedly perform an alpha-beta search with increasing depths, until the time limit is reached.
 iterative_deepening(Player,Depth,Time,_,BestMove) :-
 	get_time(Start),
-	findall(p(X,Y,Pl,Fig),p(X,Y,Pl,Fig),OldState),
+	save_state(State),
 	catch(
 		call_with_time_limit(Time,alpha_beta(Player,Depth,-inf,inf,CurrentBest,_)),
 		time_limit_exceeded,
-		(retractall(p(_,_,_,_)), forall(member(Piece,OldState),assert(Piece)), fail)  % If the search is interrupted, restore the old state
+		(restore_state(State), fail)
 	),
 	!,
 	get_time(End),

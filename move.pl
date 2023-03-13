@@ -98,3 +98,14 @@ simulate_move([X1,Y1,X2,Y2,Jumps],[p(X1,Y1,Player1,Fig1)|Removed]) :-
 undo_move([_,_,X2,Y2,_],Removed) :-
     retract(p(X2,Y2,_,_)),
     forall(member(Piece,Removed),assert(Piece)).
+
+
+% Save the current state of the board.
+save_state(State) :-
+    findall(p(X,Y,Player,Fig),p(X,Y,Player,Fig),State).
+
+
+% Restore a given state of the board.
+restore_state(State) :-
+    retractall(p(_,_,_,_)),
+    forall(member(Piece,State),assert(Piece)).
