@@ -26,7 +26,7 @@ evaluate(Value) :-
     count_mobility(white,WhiteMobility),
     count_mobility(black,BlackMobility),
     Mobility is WhiteMobility - BlackMobility,
-    Value is 2 * Men + 3 * Kings + 0.2 * Center + 0.5 * Arrows + 0.2 * Progress + Back + Threats + 0.2 * Mobility.
+    Value is 2 * Men + 3 * Kings + 0.2 * Center + 0.5 * Arrows + 0.2 * Progress + Back + 1.5 * Threats + 0.2 * Mobility.
 
 
 % For a given player, count pieces of a given type.
