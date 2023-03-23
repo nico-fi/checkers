@@ -1,3 +1,6 @@
+:- module(move,[legal_moves/2,empty_square/2,next_row/4,next_col/2,jump/8,move_piece/5,simulate_move/2,undo_move/2,save_state/1,restore_state/1]).
+
+
 % Find mandatory jump moves for the player.
 legal_moves(Player,Moves) :-
     bagof([X1,Y1,X2,Y2,Jumps],Fig^(

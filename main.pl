@@ -1,4 +1,4 @@
-:- [move,search,heuristics,draw].
+:- use_module([move,search,heuristics,draw]).
 
 
 % Predicate p(X,Y,Player,Fig) represents a piece on the board.
@@ -7,7 +7,7 @@
 
 
 % Welcome message.
-:- writeln('To start a game, type play.').
+?- writeln('To start a game, type play.').
 
 
 % Start a new game.

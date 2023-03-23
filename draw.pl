@@ -1,3 +1,6 @@
+:- module(draw, [print_logo/0, print_board/1]).
+
+
 % Print logo and instructions.
 print_logo :- writeln('
 ───────────────────────────────────────────────────────────────

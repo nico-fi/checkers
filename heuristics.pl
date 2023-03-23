@@ -1,3 +1,6 @@
+:- module(heuristics, [evaluate/1]).
+
+
 % Evaluate the game state using a heuristic function.
 evaluate(inf) :- \+ legal_moves(black,_), !.
 evaluate(-inf) :- \+ legal_moves(white,_), !.

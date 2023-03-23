@@ -1,3 +1,6 @@
+:- module(search, [search_move/4]).
+
+
 % Search for the best move using an iterative deepening alpha-beta search,
 % starting from a given depth and going on if the available time has not run out.
 search_move(Player,MinDepth,MaxTime,BestMove) :-
