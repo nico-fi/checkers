@@ -1,4 +1,4 @@
-:- module(heuristics, [evaluate/1]).
+:- module(heuristics,[evaluate/1]).
 
 
 % Evaluate the game state using a heuristic function.

@@ -1,4 +1,4 @@
-:- module(search, [search_move/4]).
+:- module(search,[search_move/4]).
 
 
 % Search for the best move using an iterative deepening alpha-beta search,

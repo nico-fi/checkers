@@ -92,6 +92,7 @@ read_move(LegalMoves,[X1,Y1,X2,Y2,Jumps]) :-
     member([X1,Y1,X2,Y2,Jumps],LegalMoves),
     !.
 
+
 % Ask the user to enter a new legal move.
 read_move(LegalMoves,Move) :-
     write('Try again '),
